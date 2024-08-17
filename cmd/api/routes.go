@@ -6,14 +6,14 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func routes() http.Handler {
+func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
-	router.HandlerFunc(http.MethodGet, "/v1/ping", ping)
+	router.HandlerFunc(http.MethodGet, "/v1/ping", app.ping)
 
 	return router
 }
 
-func ping(w http.ResponseWriter, r *http.Request) {
+func (app *application) ping(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Pong"))
 }
