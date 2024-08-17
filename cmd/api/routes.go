@@ -9,11 +9,11 @@ import (
 func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
-	router.HandlerFunc(http.MethodGet, "/v1/ping", app.ping)
+	router.HandlerFunc(http.MethodGet, "/v1/ping", app.pingHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
+
+	router.HandlerFunc(http.MethodPost, "/v1/notes", app.createNoteHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/notes/:id", app.showNoteHandler)
 
 	return router
-}
-
-func (app *application) ping(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Pong"))
 }
