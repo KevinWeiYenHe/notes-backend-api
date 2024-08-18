@@ -6,12 +6,12 @@ import (
 )
 
 func (app *application) pingHandler(w http.ResponseWriter, r *http.Request) {
-	data := map[string]string{
+	env := envelope{
 		"ping": "pong",
 		"foo":  "bar",
 	}
 
-	err := app.writeJSON(w, http.StatusOK, data, nil)
+	err := app.writeJSON(w, http.StatusOK, env, nil)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)

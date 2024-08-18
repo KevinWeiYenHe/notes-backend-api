@@ -34,7 +34,7 @@ func (app *application) showNoteHandler(w http.ResponseWriter, r *http.Request) 
 		Version:      1,
 	}
 
-	err = app.writeJSON(w, http.StatusOK, note, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"note": note}, nil)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
