@@ -5,8 +5,17 @@ import (
 	"net/http"
 )
 
-func (app *application) healthcheckHandler(w http.ResponseWriter, h *http.Request) {
-	data := fmt.Sprintf(`{"status" : "available", "environment" : "%s", "version" : "%s"}`, app.config.env, version)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(data))
+func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	data := map[string]string{
+		"status":      "available",
+		"environment": app.config.env,
+		"version":     version,
+	}
+
+	// Write Json
+	err := app.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+	}
 }
