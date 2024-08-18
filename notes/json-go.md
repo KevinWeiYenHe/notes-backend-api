@@ -13,6 +13,7 @@
 | **time.Time** | ⇒ | RFC3339-format JSON string |
 | **[]byte** | ⇒ | Base64-encoded JSON string |
 
+---
 
 | Go type | ⇒ | JSON type |
 | -- | -- | -- |
@@ -25,3 +26,5 @@
 | **chan, func, complex*** | ⇒ | Not supported |
 | **time.Time** | ⇒ | RFC3339-format JSON string |
 | **[]byte** | ⇒ | Base64-encoded JSON string |
+
+---

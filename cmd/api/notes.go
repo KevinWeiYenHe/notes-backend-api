@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/KevuTheDev/notes-backend-api/internal/data"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -14,14 +16,29 @@ func (app *application) createNoteHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) showNoteHandler(w http.ResponseWriter, r *http.Request) {
-
+	// Get param id
 	id, err := app.readIDParams(r)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	fmt.Fprintf(w, "show the details of note %d\n", id)
+	//
+	note := data.Note{
+		ID:           id,
+		CreatedAt:    time.Now(),
+		LastUpdateAt: time.Now(),
+		Title:        "Hello World",
+		Content:      "This is my first note",
+		Tags:         []string{"Message", "Hello", "World"},
+		Version:      1,
+	}
+
+	err = app.writeJSON(w, http.StatusOK, note, nil)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+	}
 }
 
 func (app *application) readIDParams(r *http.Request) (int64, error) {
