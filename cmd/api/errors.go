@@ -21,22 +21,30 @@ func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, st
 	}
 }
 
-// handles errors that occur at the server level
-func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
-	app.logError(r, err)
-
-	message := "The server encountered a problem and could not process your request"
-	app.errorResponse(w, r, http.StatusInternalServerError, message)
+// 400 BAD REQUEST
+func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.errorResponse(w, r, http.StatusBadRequest, err.Error())
 }
 
+// 404 NOT FOUND
 func (app *application) notFoundResource(w http.ResponseWriter, r *http.Request) {
 	message := "the requested resoruce could not be found"
 	app.errorResponse(w, r, http.StatusNotFound, message)
 
 }
 
+// 405 METHOD NOT ALLOWED
 // handles issues where a client has made a request where the method is not supported for that resource
 func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
 	message := fmt.Sprintf("the %s method is not supported for this resource", r.Method)
 	app.errorResponse(w, r, http.StatusMethodNotAllowed, message)
+}
+
+// 500 INTERNAL SERVER ERROR
+// handles errors that occur at the server level
+func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.logError(r, err)
+
+	message := "The server encountered a problem and could not process your request"
+	app.errorResponse(w, r, http.StatusInternalServerError, message)
 }
