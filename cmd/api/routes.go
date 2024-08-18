@@ -9,6 +9,9 @@ import (
 func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
+	// a route to handle 405 METHOD NOT ALLOWED response
+	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
+
 	router.HandlerFunc(http.MethodGet, "/v1/ping", app.pingHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 

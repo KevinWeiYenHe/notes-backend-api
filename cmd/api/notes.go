@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,18 +13,31 @@ import (
 )
 
 func (app *application) createNoteHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Creating a Note"))
+	var input struct {
+		Title   string   `json:"title"`             // title of note
+		Content string   `json:"content,omitempty"` // content of note
+		Tags    []string `json:"tags,omitempty"`    // tags of note
+	}
+
+	// Decode the given body from the response, and store the value in ^input
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	fmt.Fprintf(w, "%+v\n", input)
 }
 
 func (app *application) showNoteHandler(w http.ResponseWriter, r *http.Request) {
 	// Get param id
 	id, err := app.readIDParams(r)
 	if err != nil {
-		http.NotFound(w, r)
+		app.notFoundResource(w, r)
 		return
 	}
 
-	//
+	// The output data struct
 	note := data.Note{
 		ID:           id,
 		CreatedAt:    time.Now(),
@@ -36,8 +50,7 @@ func (app *application) showNoteHandler(w http.ResponseWriter, r *http.Request) 
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"note": note}, nil)
 	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+		app.serverErrorResponse(w, r, err)
 	}
 }
 
