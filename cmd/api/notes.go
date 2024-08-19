@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/KevuTheDev/notes-backend-api/internal/data"
+	"github.com/KevuTheDev/notes-backend-api/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -22,6 +23,21 @@ func (app *application) createNoteHandler(w http.ResponseWriter, r *http.Request
 	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	// copy the values from the input struct to a new Note struct
+	note := &data.Note{
+		Title:   input.Title,
+		Content: input.Content,
+		Tags:    input.Tags,
+	}
+
+	// Initialize a new Validator
+	v := validator.New()
+
+	if data.ValidateNote(v, note); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 

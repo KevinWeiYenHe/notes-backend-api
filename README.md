@@ -28,12 +28,29 @@ Uses Docker to run PostgreSQL
 | **DELETE** | /v1/notes/:id | Delete a specific note | 
 
 ---
+# Notes Model
+```GO
+type Note struct {
+	ID           int64     `json:"id"`                // unique id for the note
+	CreatedAt    time.Time `json:"created_at"`        // when the note was created
+	LastUpdateAt time.Time `json:"last_updated_at"`   // when the note was last updated
+	Title        string    `json:"title"`             // title of note
+	Content      string    `json:"content,omitempty"` // content of note
+	Tags         []string  `json:"tags,omitempty"`    // tags of note
+	Version      int32     `json:"version"`           // number of times the note was updated
+}
+```
+
+# Notes Form
+Title:   string   - Cannot be empty
+Content: string   - Can be empty
+Tags:    []string - Can be empty
+
+CreatedAt:    time.Time (Assigned at POST)
+LastUpdateAt: time.Time (Assigned at POST, updated at PATCH)
+
+---
 # Current Goals
-
-- Setup server
-- Setup routing
-- Setup handlers
-
 - Create database migrations for notes
 
 

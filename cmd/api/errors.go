@@ -40,6 +40,13 @@ func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.
 	app.errorResponse(w, r, http.StatusMethodNotAllowed, message)
 }
 
+// 422 UNPROCESSABLE ENTITY
+// Note that the errors parameter here has the type map[string]string, which is exactly
+// the same as the errors map contained in our Validator type.
+func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
+	app.errorResponse(w, r, http.StatusUnprocessableEntity, errors)
+}
+
 // 500 INTERNAL SERVER ERROR
 // handles errors that occur at the server level
 func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
