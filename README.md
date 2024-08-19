@@ -49,12 +49,35 @@ Tags:    []string - Can be empty
 CreatedAt:    time.Time (Assigned at POST)
 LastUpdateAt: time.Time (Assigned at POST, updated at PATCH)
 
+# Database
+```SQL
+-- Database Creation
+CREATE DATABASE notebook;
+
+-- Create role notebook 
+CREATE ROLE notebook WITH LOGIN PASSWORD 'pa55word'; -- Remember to change this unsecure password 
+
+--- Add citext extension
+CREATE EXTENSION IF NOT EXISTS citext;
+
+```
+
 ---
 # Current Goals
 - Create database migrations for notes
 
 
 
+---
+# .env FILE
+```ini
+NOTEBOOK_DB_DSN="postgres://postgres_dsn"
+
+```
+
+---
+# Database migration tool
+[migrate](https://github.com/golang-migrate/migrate)
 
 
 ---
