@@ -60,6 +60,18 @@ CREATE ROLE notebook WITH LOGIN PASSWORD 'pa55word'; -- Remember to change this 
 --- Add citext extension
 CREATE EXTENSION IF NOT EXISTS citext;
 
+--- Grant privilage to user on specific database
+GRANT ALL PRIVILEGES ON DATABASE EXAMPLE_DB TO EXAMPLE_USER;
+--- Switch to database
+\c EXAMPLE_DB postgres
+--- Grant privilage on schema to user
+GRANT ALL ON SCHEMA public TO EXAMPLE_USER;
+
+
+GRANT ALL PRIVILEGES ON DATABASE notebook TO notebook;
+
+GRANT ALL ON SCHEMA public TO notebook;
+
 ```
 
 ---
