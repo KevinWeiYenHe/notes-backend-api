@@ -41,7 +41,18 @@ func (app *application) createNoteHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	err = app.models.Notes.Insert(note)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/notes/%d", note.ID))
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"note": note}, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
 func (app *application) showNoteHandler(w http.ResponseWriter, r *http.Request) {
