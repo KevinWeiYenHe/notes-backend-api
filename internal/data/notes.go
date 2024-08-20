@@ -87,7 +87,7 @@ func (n NoteModel) Update(note *Note) error {
 	stmt := `
 		UPDATE notes
 		SET title = $1, content = $2, tags = $3, last_updated_at = NOW(), version = version + 1
-		WHERE id = $4
+		WHERE id = $4 AND version= $5
 		RETURNING version, last_updated_at`
 
 	args := []any{
@@ -95,9 +95,20 @@ func (n NoteModel) Update(note *Note) error {
 		note.Content,
 		pq.Array(note.Tags),
 		note.ID,
+		note.Version,
 	}
 
-	return n.DB.QueryRow(stmt, args...).Scan(&note.Version, &note.LastUpdateAt)
+	err := n.DB.QueryRow(stmt, args...).Scan(&note.Version, &note.LastUpdateAt)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (n NoteModel) Delete(id int64) error {

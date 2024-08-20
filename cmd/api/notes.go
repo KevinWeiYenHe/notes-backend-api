@@ -158,7 +158,12 @@ func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request
 	// Perform an update on the given data
 	err = app.models.Notes.Update(note)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 

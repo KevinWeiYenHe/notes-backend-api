@@ -93,4 +93,10 @@ NOTEBOOK_DB_DSN="postgres://postgres_dsn"
 
 
 ---
+# Postgres UUID
+- [UUID type doc](https://www.postgresql.org/docs/9.1/datatype-uuid.html)
+- [uuid-ossp extension](https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-uuid/)
+
+
+---
 Special thanks to Alex Edwards to his book, Let's Go and Let's Go Further
