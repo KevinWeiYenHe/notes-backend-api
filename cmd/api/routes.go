@@ -18,5 +18,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/notes", app.createNoteHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/notes/:id", app.showNoteHandler)
 
+	router.HandlerFunc(http.MethodPut, "/v1/notes/:id", app.updateNoteHandler)
+
 	return router
 }

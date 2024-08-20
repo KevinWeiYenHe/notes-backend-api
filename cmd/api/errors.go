@@ -27,7 +27,7 @@ func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Reques
 }
 
 // 404 NOT FOUND
-func (app *application) notFoundResource(w http.ResponseWriter, r *http.Request) {
+func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request) {
 	message := "the requested resoruce could not be found"
 	app.errorResponse(w, r, http.StatusNotFound, message)
 

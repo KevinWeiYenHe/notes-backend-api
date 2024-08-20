@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/KevuTheDev/notes-backend-api/internal/validator"
@@ -53,11 +54,50 @@ func (n NoteModel) Insert(note *Note) error {
 }
 
 func (n NoteModel) Get(id int64) (*Note, error) {
-	return nil, nil
+	stmt := `
+		SELECT id, created_at, last_updated_at, title, content, tags, version 
+		FROM notes
+		WHERE id = $1`
+
+	var note Note
+
+	err := n.DB.QueryRow(stmt, id).Scan(
+		&note.ID,
+		&note.CreatedAt,
+		&note.LastUpdateAt,
+		&note.Title,
+		&note.Content,
+		pq.Array(&note.Tags),
+		&note.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &note, nil
 }
 
 func (n NoteModel) Update(note *Note) error {
-	return nil
+	stmt := `
+		UPDATE notes
+		SET title = $1, content = $2, tags = $3, last_updated_at = NOW(), version = version + 1
+		WHERE id = $4
+		RETURNING version, last_updated_at`
+
+	args := []any{
+		note.Title,
+		note.Content,
+		pq.Array(note.Tags),
+		note.ID,
+	}
+
+	return n.DB.QueryRow(stmt, args...).Scan(&note.Version, &note.LastUpdateAt)
 }
 
 func (n NoteModel) Delete(id int64) error {

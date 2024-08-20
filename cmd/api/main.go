@@ -78,7 +78,7 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	fmt.Printf("Launching %s server on port %d...", app.config.env, app.config.port)
+	fmt.Printf("Launching %s server on port %d...\n", app.config.env, app.config.port)
 	err = srv.ListenAndServe()
 	fmt.Println(err)
 }
