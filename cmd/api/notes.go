@@ -161,3 +161,32 @@ func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) deleteNoteHandler(w http.ResponseWriter, r *http.Request) {
+	// get id param from the URI
+	id, err := app.readIDParams(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	// Perform a delete on record based on id
+	err = app.models.Notes.Delete(id)
+	if err != nil {
+		switch {
+		// no record found of specified id
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		// any errors that occur in the process of obtaining record
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// if delete record was possible, send message of successful deletion
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "movie successfully delete"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
