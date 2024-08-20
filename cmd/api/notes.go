@@ -123,8 +123,8 @@ func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	var input struct {
-		Title   string   `json:"title"`
-		Content string   `json:"content"`
+		Title   *string  `json:"title"`
+		Content *string  `json:"content"`
 		Tags    []string `json:"tags"`
 	}
 
@@ -135,10 +135,17 @@ func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// reuse the struct
-	note.Title = input.Title
-	note.Content = input.Content
-	note.Tags = input.Tags
+	if input.Title != nil {
+		note.Title = *input.Title
+	}
+
+	if input.Content != nil {
+		note.Content = *input.Content
+	}
+
+	if input.Tags != nil {
+		note.Tags = input.Tags
+	}
 
 	// Initialize a new Validator
 	v := validator.New()
