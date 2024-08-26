@@ -137,7 +137,8 @@ func (m NoteModel) Latest() ([]*Note, error) {
 	stmt := `
 		SELECT id, created_at, last_updated_at, title, content, tags, version 
 		FROM notes
-		ORDER BY last_updated_at DESC`
+		ORDER BY last_updated_at DESC 
+		LIMIT 25`
 
 	rows, err := m.DB.Query(stmt)
 	if err != nil {
