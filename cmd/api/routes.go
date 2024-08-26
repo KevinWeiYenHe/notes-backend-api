@@ -20,5 +20,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPut, "/v1/notes/:id", app.updateNoteHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/notes/:id", app.deleteNoteHandler)
 
+	router.HandlerFunc(http.MethodGet, "/v1/notes", app.latestNotesHandler)
+
 	return router
 }

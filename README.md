@@ -83,7 +83,7 @@ GRANT ALL ON SCHEMA public TO notebook;
 ---
 # .env FILE
 ```ini
-NOTEBOOK_DB_DSN="postgres://postgres_dsn"
+NOTEBOOK_DB_DSN="postgres://greenlight:pa55word@localhost/greenlight?sslmode=disable"
 
 ```
 
@@ -91,6 +91,15 @@ NOTEBOOK_DB_DSN="postgres://postgres_dsn"
 # Database migration tool
 [migrate](https://github.com/golang-migrate/migrate)
 
+```bash
+migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
+```
+
+```sql
+--- copy onto the psql console
+\c notebook postgres
+\COPY notes (title, content, tags) FROM  './db/note_data.csv' DELIMITER '|';
+```
 
 ---
 Special thanks to Alex Edwards to his book, Let's Go and Let's Go Further

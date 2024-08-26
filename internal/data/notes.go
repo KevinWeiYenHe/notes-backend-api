@@ -42,26 +42,31 @@ type NoteModel struct {
 	DB *sql.DB
 }
 
-func (n NoteModel) Insert(note *Note) error {
+func (m NoteModel) Insert(note *Note) error {
 	stmt := `
 		INSERT INTO notes (title, content, tags)
 		VALUES ($1, $2, $3)
 		RETURNING id, created_at, last_updated_at, version`
 
+	// set info into the args to return back to the client
 	args := []any{note.Title, note.Content, pq.Array(note.Tags)}
 
-	return n.DB.QueryRow(stmt, args...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version)
+	// the scan part matches with the RETURNING columns order
+	// .Scan
+	return m.DB.QueryRow(stmt, args...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version)
 }
 
-func (n NoteModel) Get(id int64) (*Note, error) {
+func (m NoteModel) Get(id int64) (*Note, error) {
 	stmt := `
 		SELECT id, created_at, last_updated_at, title, content, tags, version 
 		FROM notes
 		WHERE id = $1`
 
+	// var to information to send back to client
 	var note Note
 
-	err := n.DB.QueryRow(stmt, id).Scan(
+	// columns should match how the statement order
+	err := m.DB.QueryRow(stmt, id).Scan(
 		&note.ID,
 		&note.CreatedAt,
 		&note.LastUpdateAt,
@@ -71,8 +76,10 @@ func (n NoteModel) Get(id int64) (*Note, error) {
 		&note.Version,
 	)
 
+	// if error encounter on the process
 	if err != nil {
 		switch {
+		// no rows foudn
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrRecordNotFound
 		default:
@@ -83,7 +90,7 @@ func (n NoteModel) Get(id int64) (*Note, error) {
 	return &note, nil
 }
 
-func (n NoteModel) Update(note *Note) error {
+func (m NoteModel) Update(note *Note) error {
 	stmt := `
 		UPDATE notes
 		SET title = $1, content = $2, tags = $3, last_updated_at = NOW(), version = version + 1
@@ -97,10 +104,10 @@ func (n NoteModel) Update(note *Note) error {
 		note.ID,
 	}
 
-	return n.DB.QueryRow(stmt, args...).Scan(&note.Version, &note.LastUpdateAt)
+	return m.DB.QueryRow(stmt, args...).Scan(&note.Version, &note.LastUpdateAt)
 }
 
-func (n NoteModel) Delete(id int64) error {
+func (m NoteModel) Delete(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
 	}
@@ -109,7 +116,7 @@ func (n NoteModel) Delete(id int64) error {
 		DELETE FROM notes
 		WHERE id = $1`
 
-	result, err := n.DB.Exec(query, id)
+	result, err := m.DB.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -124,4 +131,37 @@ func (n NoteModel) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (m NoteModel) Latest() ([]*Note, error) {
+	stmt := `
+		SELECT id, created_at, last_updated_at, title, content, tags, version 
+		FROM notes
+		ORDER BY last_updated_at DESC`
+
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	notes := []*Note{}
+
+	for rows.Next() {
+		n := &Note{}
+
+		err = rows.Scan(&n.ID, &n.CreatedAt, &n.LastUpdateAt, &n.Title, &n.Content, pq.Array(&n.Tags), &n.Version)
+		if err != nil {
+			return nil, err
+		}
+
+		notes = append(notes, n)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return notes, nil
 }

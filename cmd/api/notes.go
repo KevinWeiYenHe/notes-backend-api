@@ -190,3 +190,23 @@ func (app *application) deleteNoteHandler(w http.ResponseWriter, r *http.Request
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) latestNotesHandler(w http.ResponseWriter, r *http.Request) {
+	notes, err := app.models.Notes.Latest()
+	if err != nil {
+		switch {
+		// no record found of specified id
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		// any errors that occur in the process of obtaining record
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"notes": notes}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
