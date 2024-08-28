@@ -40,6 +40,12 @@ func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.
 	app.errorResponse(w, r, http.StatusMethodNotAllowed, message)
 }
 
+// 409 CONFLICT
+func (app *application) editConflictResponse(w http.ResponseWriter, r *http.Request) {
+	message := "unable to update the record due to an edit conflict, please try again"
+	app.errorResponse(w, r, http.StatusConflict, message)
+}
+
 // 422 UNPROCESSABLE ENTITY
 // Note that the errors parameter here has the type map[string]string, which is exactly
 // the same as the errors map contained in our Validator type.

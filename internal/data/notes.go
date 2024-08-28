@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -51,9 +52,17 @@ func (m NoteModel) Insert(note *Note) error {
 	// set info into the args to return back to the client
 	args := []any{note.Title, note.Content, pq.Array(note.Tags)}
 
+	// Use the context.WithTimeout() function to create a context.Context which carries a
+	// 3-second timeout deadline. Note that we're using the empty context.Background()
+	// as the 'parent' context.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns.
+	defer cancel()
+
 	// the scan part matches with the RETURNING columns order
 	// .Scan
-	return m.DB.QueryRow(stmt, args...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version)
+	return m.DB.QueryRowContext(ctx, stmt, args...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version)
 }
 
 func (m NoteModel) Get(id int64) (*Note, error) {
@@ -65,8 +74,16 @@ func (m NoteModel) Get(id int64) (*Note, error) {
 	// var to information to send back to client
 	var note Note
 
+	// Use the context.WithTimeout() function to create a context.Context which carries a
+	// 3-second timeout deadline. Note that we're using the empty context.Background()
+	// as the 'parent' context.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns.
+	defer cancel()
+
 	// columns should match how the statement order
-	err := m.DB.QueryRow(stmt, id).Scan(
+	err := m.DB.QueryRowContext(ctx, stmt, id).Scan(
 		&note.ID,
 		&note.CreatedAt,
 		&note.LastUpdateAt,
@@ -94,7 +111,7 @@ func (m NoteModel) Update(note *Note) error {
 	stmt := `
 		UPDATE notes
 		SET title = $1, content = $2, tags = $3, last_updated_at = NOW(), version = version + 1
-		WHERE id = $4
+		WHERE id = $4 AND version = $5
 		RETURNING version, last_updated_at`
 
 	args := []any{
@@ -102,9 +119,28 @@ func (m NoteModel) Update(note *Note) error {
 		note.Content,
 		pq.Array(note.Tags),
 		note.ID,
+		note.Version,
 	}
 
-	return m.DB.QueryRow(stmt, args...).Scan(&note.Version, &note.LastUpdateAt)
+	// Use the context.WithTimeout() function to create a context.Context which carries a
+	// 3-second timeout deadline. Note that we're using the empty context.Background()
+	// as the 'parent' context.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns.
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, stmt, args...).Scan(&note.Version, &note.LastUpdateAt)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (m NoteModel) Delete(id int64) error {
@@ -116,7 +152,15 @@ func (m NoteModel) Delete(id int64) error {
 		DELETE FROM notes
 		WHERE id = $1`
 
-	result, err := m.DB.Exec(query, id)
+	// Use the context.WithTimeout() function to create a context.Context which carries a
+	// 3-second timeout deadline. Note that we're using the empty context.Background()
+	// as the 'parent' context.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns.
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
@@ -150,14 +194,55 @@ func (m NoteModel) Latest() ([]*Note, error) {
 	notes := []*Note{}
 
 	for rows.Next() {
-		n := &Note{}
+		var n Note
 
 		err = rows.Scan(&n.ID, &n.CreatedAt, &n.LastUpdateAt, &n.Title, &n.Content, pq.Array(&n.Tags), &n.Version)
 		if err != nil {
 			return nil, err
 		}
 
-		notes = append(notes, n)
+		notes = append(notes, &n)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
+func (m NoteModel) GetAll(title string, filters Filters) ([]*Note, error) {
+	stmt := `
+		SELECT id, created_at, last_updated_at, title, content, tags, version
+		FROM notes
+		ORDER BY last_updated_at DESC`
+
+	// Use the context.WithTimeout() function to create a context.Context which carries a
+	// 3-second timeout deadline. Note that we're using the empty context.Background()
+	// as the 'parent' context.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns.
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	notes := []*Note{}
+
+	for rows.Next() {
+		var n Note
+
+		err := rows.Scan(&n.ID, &n.CreatedAt, &n.LastUpdateAt, &n.Title, &n.Content, pq.Array(&n.Tags), &n.Version)
+		if err != nil {
+			return nil, err
+		}
+
+		notes = append(notes, &n)
 	}
 
 	if err = rows.Err(); err != nil {
