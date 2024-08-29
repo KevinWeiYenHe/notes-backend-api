@@ -215,6 +215,7 @@ func (m NoteModel) GetAll(title string, filters Filters) ([]*Note, error) {
 	stmt := `
 		SELECT id, created_at, last_updated_at, title, content, tags, version
 		FROM notes
+		WHERE (title ILIKE $1 OR $1 = '')
 		ORDER BY last_updated_at DESC`
 
 	// Use the context.WithTimeout() function to create a context.Context which carries a
@@ -225,15 +226,17 @@ func (m NoteModel) GetAll(title string, filters Filters) ([]*Note, error) {
 	// method returns.
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, stmt)
+	// adding wildcard
+	title += "%"
+
+	// rows, err := m.DB.QueryContext(ctx, query, title, pq.Array(tags))
+	rows, err := m.DB.QueryContext(ctx, stmt, title)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	notes := []*Note{}
-
 	for rows.Next() {
 		var n Note
 

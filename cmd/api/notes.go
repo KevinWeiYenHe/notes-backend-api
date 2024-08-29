@@ -250,7 +250,7 @@ func (app *application) listNotesHandler(w http.ResponseWriter, r *http.Request)
 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
 
 	// Extract the sort query string value, falling back to "id" if it is not provided
-	// by the client (which will imply a ascending sort on movie ID).
+	// by the client (which will imply a ascending sort on note ID).
 	// input.Filters.Sort = app.readString(qs, "sort", "id")
 	//
 	input.Sort = "last_updated_at"
