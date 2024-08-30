@@ -22,5 +22,5 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/notes", app.listNotesHandler)
 
-	return router
+	return app.recoverPanic(router)
 }
