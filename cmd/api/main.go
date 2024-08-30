@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/KevuTheDev/notes-backend-api/internal/data"
+	"github.com/KevuTheDev/notes-backend-api/internal/jsonlog"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -31,6 +32,7 @@ type config struct {
 
 type application struct {
 	config config
+	logger *jsonlog.Logger
 	models data.Models
 }
 
@@ -54,19 +56,22 @@ func main() {
 
 	flag.Parse()
 
+	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+
 	// Setup Database connection
 	db, err := openDB(cfg)
 	if err != nil {
-		fmt.Println(err)
+		logger.PrintFatal(err, nil)
 	}
 	// Defer a call to db.Close() so that the connection pool is closed before the
 	// main() function exits.
 	defer db.Close()
 
-	fmt.Println("database connection pool established")
+	logger.PrintInfo("database connection pool established", nil)
 
 	app := &application{
 		config: cfg,
+		logger: logger,
 		models: data.NewModels(db),
 	}
 
@@ -78,9 +83,13 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	fmt.Printf("Launching %s server on port %d...\n", app.config.env, app.config.port)
+	logger.PrintInfo("starting server", map[string]string{
+		"addr": srv.Addr,
+		"env":  cfg.env,
+	})
+
 	err = srv.ListenAndServe()
-	fmt.Println(err)
+	logger.PrintFatal(err, nil)
 }
 
 func loadDotEnvFile() {

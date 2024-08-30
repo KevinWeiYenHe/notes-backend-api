@@ -7,7 +7,10 @@ import (
 
 // Generic helper function for logging an error message
 func (app *application) logError(r *http.Request, err error) {
-	fmt.Println(err)
+	app.logger.PrintError(err, map[string]string{
+		"request_method": r.Method,
+		"request_url":    r.URL.String(),
+	})
 }
 
 // handles errors and respond back to the user as a JSON message
