@@ -15,15 +15,16 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/ping", app.pingHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
+	router.HandlerFunc(http.MethodGet, "/v1/notes", app.listNotesHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/notes", app.createNoteHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/notes/:id", app.showNoteHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/notes/:id", app.updateNoteHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/notes/:id", app.deleteNoteHandler)
 
-	router.HandlerFunc(http.MethodGet, "/v1/notes", app.listNotesHandler)
-
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
+
+	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
 
 	return app.recoverPanic(router)
 }
