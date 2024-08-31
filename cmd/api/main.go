@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/KevuTheDev/notes-backend-api/internal/data"
 	"github.com/KevuTheDev/notes-backend-api/internal/jsonlog"
+	"github.com/KevuTheDev/notes-backend-api/internal/mailer"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -42,6 +42,7 @@ type application struct {
 	logger *jsonlog.Logger
 	models data.Models
 	mailer mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 func main() {
@@ -90,7 +91,7 @@ func main() {
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
-	err = srv.ListenAndServe()
+	err = app.serve()
 	logger.PrintFatal(err, nil)
 }
 
