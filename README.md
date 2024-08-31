@@ -98,7 +98,13 @@ SMTP_SENDER=""
 [migrate](https://github.com/golang-migrate/migrate)
 
 ```bash
+# to migrate a database up/down/goto X
 migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
+
+# create a migration
+migrate create -seq -ext='.sql' -dir='./migrations' migration_process
+
+
 ```
 
 ```sql
