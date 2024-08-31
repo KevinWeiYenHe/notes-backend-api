@@ -83,8 +83,14 @@ GRANT ALL ON SCHEMA public TO notebook;
 ---
 # .env FILE
 ```ini
+# POSTGRES DSN string
 NOTEBOOK_DB_DSN="postgres://greenlight:pa55word@localhost/greenlight?sslmode=disable"
-
+# SMTP Server information
+SMTP_HOST="sandbox.smtp.mailtrap.io"
+SMTP_PORT=25
+SMTP_USERNAME=""
+SMTP_PASSWORD=""
+SMTP_SENDER=""
 ```
 
 ---
