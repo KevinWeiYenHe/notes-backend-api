@@ -33,7 +33,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v2/notes", app.requireActivatedUser(app.listNotesByUserHandler))
 	router.HandlerFunc(http.MethodPost, "/v2/notes", app.requireActivatedUser(app.createNoteByUserHandler))
-	router.HandlerFunc(http.MethodGet, "/v2/notes/:id", app.requireActivatedUser(app.showNoteHandler))
+	router.HandlerFunc(http.MethodGet, "/v2/notes/:id", app.requireActivatedUser(app.showNoteByUserHandler))
 	router.HandlerFunc(http.MethodPatch, "/v2/notes/:id", app.requireActivatedUser(app.updateNoteHandler))
 	router.HandlerFunc(http.MethodDelete, "/v2/notes/:id", app.requireActivatedUser(app.deleteNoteHandler))
 

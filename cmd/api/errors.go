@@ -24,33 +24,39 @@ func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, st
 	}
 }
 
-// 400 BAD REQUEST
+// 400 BAD REQUEST / INVALID REQUEST
 func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.errorResponse(w, r, http.StatusBadRequest, err.Error())
 }
 
-// 401 UNAUTHORIZED
+// 401 UNAUTHORIZED REQUEST
 func (app *application) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
 	message := "invalid authentication credentials"
 	app.errorResponse(w, r, http.StatusUnauthorized, message)
 }
 
-// 401 UNAUTHORIZED
+// 401 UNAUTHORIZED REQUEST
 func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", "Bearer")
 	message := "invalid or missing authentication token"
 	app.errorResponse(w, r, http.StatusUnauthorized, message)
 }
 
-// 401 UNAUTHORIZED
+// 401 UNAUTHORIZED REQUEST
 func (app *application) authenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
 	message := "you must be authenticated to access this resource"
 	app.errorResponse(w, r, http.StatusUnauthorized, message)
 }
 
-// 403 FORBIDDEN
+// 403 ACCESS TO RESOURCE FORBIDDEN
 func (app *application) inactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
 	message := "your user account must be activated to access this resource"
+	app.errorResponse(w, r, http.StatusForbidden, message)
+}
+
+// 403 ACCESS TO RESOURCE FORBIDDEN
+func (app *application) unauthorizedAccountResponse(w http.ResponseWriter, r *http.Request) {
+	message := "you do not have permission to access this resource"
 	app.errorResponse(w, r, http.StatusForbidden, message)
 }
 

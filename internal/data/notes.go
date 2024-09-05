@@ -295,6 +295,49 @@ func (m NoteModel) InsertByUser(note *Note, userid int64) error {
 	return m.DB.QueryRowContext(ctx, stmt, params...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version, &note.AuthorID)
 }
 
+func (m NoteModel) GetByUser(id int64, userid int64) (*Note, error) {
+	stmt := `
+		SELECT id, created_at, last_updated_at, title, content, tags, version, author_id
+		FROM notes
+		WHERE id = $1 AND author_id = $2`
+
+	params := []any{
+		id,
+		userid,
+	}
+
+	// var to information to send back to client
+	var note Note
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// columns should match how the statement order
+	err := m.DB.QueryRowContext(ctx, stmt, params...).Scan(
+		&note.ID,
+		&note.CreatedAt,
+		&note.LastUpdateAt,
+		&note.Title,
+		&note.Content,
+		pq.Array(&note.Tags),
+		&note.Version,
+		&note.AuthorID,
+	)
+
+	// if error encounter on the process
+	if err != nil {
+		switch {
+		// no rows foudn
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &note, nil
+}
+
 func (m NoteModel) GetAllByUser(title string, filters Filters, userid int64) ([]*Note, error) {
 	stmt := `
 		SELECT id, created_at, last_updated_at, title, content, tags, version, author_id
@@ -302,12 +345,18 @@ func (m NoteModel) GetAllByUser(title string, filters Filters, userid int64) ([]
 		WHERE (title ILIKE $1 OR $1 = '') AND author_id = $2
 		ORDER BY last_updated_at DESC`
 
+	params := []any{
+		title,
+		userid,
+	}
+
+	// Context window
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	title += "%"
 
-	rows, err := m.DB.QueryContext(ctx, stmt, title, userid)
+	rows, err := m.DB.QueryContext(ctx, stmt, params...)
 	if err != nil {
 		return nil, err
 	}
