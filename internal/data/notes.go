@@ -295,15 +295,14 @@ func (m NoteModel) InsertByUser(note *Note, userid int64) error {
 	return m.DB.QueryRowContext(ctx, stmt, params...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version, &note.AuthorID)
 }
 
-func (m NoteModel) GetByUser(id int64, userid int64) (*Note, error) {
+func (m NoteModel) GetByUser(id int64) (*Note, error) {
 	stmt := `
 		SELECT id, created_at, last_updated_at, title, content, tags, version, author_id
 		FROM notes
-		WHERE id = $1 AND author_id = $2`
+		WHERE id = $1`
 
 	params := []any{
 		id,
-		userid,
 	}
 
 	// var to information to send back to client

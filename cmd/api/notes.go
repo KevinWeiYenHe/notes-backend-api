@@ -343,16 +343,21 @@ func (app *application) showNoteByUserHandler(w http.ResponseWriter, r *http.Req
 	userdata := app.contextGetUser(r)
 
 	// get note based on id (extracted from URI)
-	note, err := app.models.Notes.GetByUser(id, userdata.ID)
+	note, err := app.models.Notes.GetByUser(id)
 	if err != nil {
 		switch {
 		// no record found of specified id
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.unauthorizedAccountResponse(w, r)
+			app.notFoundResponse(w, r)
 		// any errors that occur in the process of obtaining record
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
+		return
+	}
+
+	if note.AuthorID != userdata.ID {
+		app.unauthorizedAccountResponse(w, r)
 		return
 	}
 
