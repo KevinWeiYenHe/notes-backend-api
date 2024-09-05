@@ -84,7 +84,7 @@ GRANT ALL ON SCHEMA public TO notebook;
 # .env FILE
 ```ini
 # POSTGRES DSN string
-NOTEBOOK_DB_DSN="postgres://greenlight:pa55word@localhost/greenlight?sslmode=disable"
+NOTEBOOK_DB_DSN="postgres://notebook:pa55word@localhost/notebook?sslmode=disable"
 # SMTP Server information
 SMTP_HOST="sandbox.smtp.mailtrap.io"
 SMTP_PORT=25
@@ -99,7 +99,7 @@ SMTP_SENDER=""
 
 ```bash
 # to migrate a database up/down/goto X
-migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
+migrate -path=./migrations -database=$NOTEBOOK_DB_DSN up
 
 # create a migration
 migrate create -seq -ext='.sql' -dir='./migrations' migration_process
