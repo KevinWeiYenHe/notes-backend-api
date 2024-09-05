@@ -197,7 +197,10 @@ func (m NoteModel) Latest() ([]*Note, error) {
 		ORDER BY last_updated_at DESC 
 		LIMIT 25`
 
-	rows, err := m.DB.Query(stmt)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, stmt)
 	if err != nil {
 		return nil, err
 	}
