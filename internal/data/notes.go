@@ -51,7 +51,11 @@ func (m NoteModel) Insert(note *Note) error {
 		RETURNING id, created_at, last_updated_at, version`
 
 	// set info into the args to return back to the client
-	args := []any{note.Title, note.Content, pq.Array(note.Tags)}
+	params := []any{
+		note.Title,
+		note.Content,
+		pq.Array(note.Tags),
+	}
 
 	// Use the context.WithTimeout() function to create a context.Context which carries a
 	// 3-second timeout deadline. Note that we're using the empty context.Background()
@@ -63,7 +67,7 @@ func (m NoteModel) Insert(note *Note) error {
 
 	// the scan part matches with the RETURNING columns order
 	// .Scan
-	return m.DB.QueryRowContext(ctx, stmt, args...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version)
+	return m.DB.QueryRowContext(ctx, stmt, params...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version)
 }
 
 func (m NoteModel) Get(id int64) (*Note, error) {
@@ -71,6 +75,10 @@ func (m NoteModel) Get(id int64) (*Note, error) {
 		SELECT id, created_at, last_updated_at, title, content, tags, version 
 		FROM notes
 		WHERE id = $1`
+
+	params := []any{
+		id,
+	}
 
 	// var to information to send back to client
 	var note Note
@@ -84,7 +92,7 @@ func (m NoteModel) Get(id int64) (*Note, error) {
 	defer cancel()
 
 	// columns should match how the statement order
-	err := m.DB.QueryRowContext(ctx, stmt, id).Scan(
+	err := m.DB.QueryRowContext(ctx, stmt, params...).Scan(
 		&note.ID,
 		&note.CreatedAt,
 		&note.LastUpdateAt,
@@ -115,7 +123,7 @@ func (m NoteModel) Update(note *Note) error {
 		WHERE id = $4 AND version = $5
 		RETURNING version, last_updated_at`
 
-	args := []any{
+	params := []any{
 		note.Title,
 		note.Content,
 		pq.Array(note.Tags),
@@ -131,7 +139,7 @@ func (m NoteModel) Update(note *Note) error {
 	// method returns.
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, stmt, args...).Scan(&note.Version, &note.LastUpdateAt)
+	err := m.DB.QueryRowContext(ctx, stmt, params...).Scan(&note.Version, &note.LastUpdateAt)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -149,9 +157,13 @@ func (m NoteModel) Delete(id int64) error {
 		return ErrRecordNotFound
 	}
 
-	query := `
+	stmt := `
 		DELETE FROM notes
 		WHERE id = $1`
+
+	params := []any{
+		id,
+	}
 
 	// Use the context.WithTimeout() function to create a context.Context which carries a
 	// 3-second timeout deadline. Note that we're using the empty context.Background()
@@ -161,7 +173,7 @@ func (m NoteModel) Delete(id int64) error {
 	// method returns.
 	defer cancel()
 
-	result, err := m.DB.ExecContext(ctx, query, id)
+	result, err := m.DB.ExecContext(ctx, stmt, params...)
 	if err != nil {
 		return err
 	}
@@ -219,12 +231,16 @@ func (m NoteModel) GetAll(title string, filters Filters) ([]*Note, error) {
 		WHERE (title ILIKE $1 OR $1 = '')
 		ORDER BY last_updated_at DESC`
 
+	params := []any{
+		title,
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	title += "%"
 
-	rows, err := m.DB.QueryContext(ctx, stmt, title)
+	rows, err := m.DB.QueryContext(ctx, stmt, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +272,12 @@ func (m NoteModel) InsertByUser(note *Note, userid int64) error {
 		RETURNING id, created_at, last_updated_at, version, author_id`
 
 	// set info into the args to return back to the client
-	args := []any{note.Title, note.Content, pq.Array(note.Tags), userid}
+	params := []any{
+		note.Title,
+		note.Content,
+		pq.Array(note.Tags),
+		userid,
+	}
 
 	// Use the context.WithTimeout() function to create a context.Context which carries a
 	// 3-second timeout deadline. Note that we're using the empty context.Background()
@@ -268,7 +289,7 @@ func (m NoteModel) InsertByUser(note *Note, userid int64) error {
 
 	// the scan part matches with the RETURNING columns order
 	// .Scan
-	return m.DB.QueryRowContext(ctx, stmt, args...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version, &note.AuthorID)
+	return m.DB.QueryRowContext(ctx, stmt, params...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version, &note.AuthorID)
 }
 
 func (m NoteModel) GetAllByUser(title string, filters Filters, userid int64) ([]*Note, error) {
