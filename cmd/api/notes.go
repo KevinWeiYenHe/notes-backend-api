@@ -282,17 +282,64 @@ func (app *application) listNotesHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+func (app *application) createNoteByUserHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title   string   `json:"title"`             // title of note
+		Content string   `json:"content,omitempty"` // content of note
+		Tags    []string `json:"tags,omitempty"`    // tags of note
+	}
+
+	// Decode the given body from the response, and store the value in ^input
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	// The middleware will protect this from erroring (I think)
+	user := app.contextGetUser(r)
+
+	// copy the values from the input struct to a new Note struct
+	note := &data.Note{
+		Title:   input.Title,
+		Content: input.Content,
+		Tags:    input.Tags,
+	}
+
+	// Initialize a new Validator
+	v := validator.New()
+	// Perform validation check on data sent from client
+	if data.ValidateNote(v, note); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	// validation check passed, performing insert
+	err = app.models.Notes.InsertByUser(note, user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
+	// setup a location header of where the resource will be located at
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/notes/%d", note.ID))
+
+	// send a response back to the client with the new note
+	err = app.writeJSON(w, http.StatusCreated, envelope{"note": note}, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) listNotesByUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title string
 		// Tags []string
 		data.Filters
-		UserId int64
 	}
 
+	// The middleware will protect this from erroring (I think)
 	user := app.contextGetUser(r)
-
-	input.UserId = user.ID
 
 	// Initialize a new Validator instance
 	v := validator.New()
@@ -330,7 +377,7 @@ func (app *application) listNotesByUserHandler(w http.ResponseWriter, r *http.Re
 
 	// Call the GetAll() method to retrieve the movies, passing in the various filter
 	// parameters.
-	notes, err := app.models.Notes.GetAllByUser(input.Title, input.Filters, input.UserId)
+	notes, err := app.models.Notes.GetAllByUser(input.Title, input.Filters, user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

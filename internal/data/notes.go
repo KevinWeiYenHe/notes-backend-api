@@ -249,6 +249,28 @@ func (m NoteModel) GetAll(title string, filters Filters) ([]*Note, error) {
 	return notes, nil
 }
 
+func (m NoteModel) InsertByUser(note *Note, userid int64) error {
+	stmt := `
+		INSERT INTO notes (title, content, tags, author_id)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at, last_updated_at, version, author_id`
+
+	// set info into the args to return back to the client
+	args := []any{note.Title, note.Content, pq.Array(note.Tags), userid}
+
+	// Use the context.WithTimeout() function to create a context.Context which carries a
+	// 3-second timeout deadline. Note that we're using the empty context.Background()
+	// as the 'parent' context.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns.
+	defer cancel()
+
+	// the scan part matches with the RETURNING columns order
+	// .Scan
+	return m.DB.QueryRowContext(ctx, stmt, args...).Scan(&note.ID, &note.CreatedAt, &note.LastUpdateAt, &note.Version, &note.AuthorID)
+}
+
 func (m NoteModel) GetAllByUser(title string, filters Filters, userid int64) ([]*Note, error) {
 	stmt := `
 		SELECT id, created_at, last_updated_at, title, content, tags, version, author_id
