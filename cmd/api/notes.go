@@ -390,6 +390,7 @@ func (app *application) updateNoteByUserHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Authorization Check
 	if note.AuthorID != userdata.ID {
 		app.unauthorizedAccountResponse(w, r)
 		return
@@ -445,6 +446,55 @@ func (app *application) updateNoteByUserHandler(w http.ResponseWriter, r *http.R
 
 	// when successful, create a request to user with the new note data
 	err = app.writeJSON(w, http.StatusOK, envelope{"note": note}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteNoteByUserHandler(w http.ResponseWriter, r *http.Request) {
+	// get id param from the URI
+	id, err := app.readIDParams(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	// The middleware will protect this from erroring (I think)
+	userdata := app.contextGetUser(r)
+
+	note, err := app.models.Notes.GetByUser(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// Authorization Check
+	if note.AuthorID != userdata.ID {
+		app.unauthorizedAccountResponse(w, r)
+		return
+	}
+
+	// Perform a delete on record based on id
+	err = app.models.Notes.DeleteByUser(id, userdata.ID)
+	if err != nil {
+		switch {
+		// no record found of specified id
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		// any errors that occur in the process of obtaining record
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// if delete record was possible, send message of successful deletion
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "note successfully delete"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

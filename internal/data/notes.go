@@ -374,6 +374,45 @@ func (m NoteModel) UpdateByUser(note *Note, userid int64) error {
 	return nil
 }
 
+func (m NoteModel) DeleteByUser(id int64, userid int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	stmt := `
+		DELETE FROM notes
+		WHERE id = $1 AND author_id = $2`
+
+	params := []any{
+		id,
+		userid,
+	}
+
+	// Use the context.WithTimeout() function to create a context.Context which carries a
+	// 3-second timeout deadline. Note that we're using the empty context.Background()
+	// as the 'parent' context.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns.
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, stmt, params...)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
 func (m NoteModel) GetAllByUser(title string, filters Filters, userid int64) ([]*Note, error) {
 	stmt := `
 		SELECT id, created_at, last_updated_at, title, content, tags, version, author_id
