@@ -368,6 +368,88 @@ func (app *application) showNoteByUserHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
+func (app *application) updateNoteByUserHandler(w http.ResponseWriter, r *http.Request) {
+	// get id param from the URI
+	id, err := app.readIDParams(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	// The middleware will protect this from erroring (I think)
+	userdata := app.contextGetUser(r)
+
+	note, err := app.models.Notes.GetByUser(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if note.AuthorID != userdata.ID {
+		app.unauthorizedAccountResponse(w, r)
+		return
+	}
+
+	var input struct {
+		Title   *string  `json:"title"`
+		Content *string  `json:"content"`
+		Tags    []string `json:"tags"`
+	}
+
+	// Decode the given body from the response, and store the value in ^input
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	// reuse the struct
+	if input.Title != nil {
+		note.Title = *input.Title
+	}
+
+	if input.Content != nil {
+		note.Content = *input.Content
+	}
+
+	if input.Tags != nil {
+		note.Tags = input.Tags
+	}
+
+	// Initialize a new Validator
+	v := validator.New()
+	// Perform validation check on data sent from client
+	if data.ValidateNote(v, note); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	// Perform an update on the given data
+	// Intercept any ErrEditConflict error and call the new editConflictResponse()
+	// helper.
+	err = app.models.Notes.UpdateByUser(note, userdata.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// when successful, create a request to user with the new note data
+	err = app.writeJSON(w, http.StatusOK, envelope{"note": note}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) listNotesByUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title string

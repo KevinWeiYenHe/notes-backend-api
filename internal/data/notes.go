@@ -337,6 +337,43 @@ func (m NoteModel) GetByUser(id int64) (*Note, error) {
 	return &note, nil
 }
 
+func (m NoteModel) UpdateByUser(note *Note, userid int64) error {
+	stmt := `
+		UPDATE notes
+		SET title = $1, content = $2, tags = $3, last_updated_at = NOW(), version = version + 1
+		WHERE id = $4 AND version = $5 AND author_id = $6
+		RETURNING version, last_updated_at`
+
+	params := []any{
+		note.Title,
+		note.Content,
+		pq.Array(note.Tags),
+		note.ID,
+		note.Version,
+		userid,
+	}
+
+	// Use the context.WithTimeout() function to create a context.Context which carries a
+	// 3-second timeout deadline. Note that we're using the empty context.Background()
+	// as the 'parent' context.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns.
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, stmt, params...).Scan(&note.Version, &note.LastUpdateAt)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m NoteModel) GetAllByUser(title string, filters Filters, userid int64) ([]*Note, error) {
 	stmt := `
 		SELECT id, created_at, last_updated_at, title, content, tags, version, author_id
