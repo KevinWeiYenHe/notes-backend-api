@@ -25,6 +25,7 @@ type Note struct {
 	Content      string    `json:"content,omitempty"` // content of note
 	Tags         []string  `json:"tags,omitempty"`    // tags of note
 	Version      int32     `json:"version"`           // number of times the note was updated
+	AuthorID     int64     `json:"id"`                // author id for the note
 }
 
 func ValidateNote(v *validator.Validator, note *Note) {
@@ -218,18 +219,11 @@ func (m NoteModel) GetAll(title string, filters Filters) ([]*Note, error) {
 		WHERE (title ILIKE $1 OR $1 = '')
 		ORDER BY last_updated_at DESC`
 
-	// Use the context.WithTimeout() function to create a context.Context which carries a
-	// 3-second timeout deadline. Note that we're using the empty context.Background()
-	// as the 'parent' context.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	// Importantly, use defer to make sure that we cancel the context before the Get()
-	// method returns.
 	defer cancel()
 
-	// adding wildcard
 	title += "%"
 
-	// rows, err := m.DB.QueryContext(ctx, query, title, pq.Array(tags))
 	rows, err := m.DB.QueryContext(ctx, stmt, title)
 	if err != nil {
 		return nil, err
@@ -241,6 +235,43 @@ func (m NoteModel) GetAll(title string, filters Filters) ([]*Note, error) {
 		var n Note
 
 		err := rows.Scan(&n.ID, &n.CreatedAt, &n.LastUpdateAt, &n.Title, &n.Content, pq.Array(&n.Tags), &n.Version)
+		if err != nil {
+			return nil, err
+		}
+
+		notes = append(notes, &n)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
+func (m NoteModel) GetAllByUser(title string, filters Filters, userid int64) ([]*Note, error) {
+	stmt := `
+		SELECT id, created_at, last_updated_at, title, content, tags, version, author_id
+		FROM notes
+		WHERE (title ILIKE $1 OR $1 = '') AND author_id = $2
+		ORDER BY last_updated_at DESC`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	title += "%"
+
+	rows, err := m.DB.QueryContext(ctx, stmt, title, userid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	notes := []*Note{}
+	for rows.Next() {
+		var n Note
+
+		err := rows.Scan(&n.ID, &n.CreatedAt, &n.LastUpdateAt, &n.Title, &n.Content, pq.Array(&n.Tags), &n.Version, &n.AuthorID)
 		if err != nil {
 			return nil, err
 		}
