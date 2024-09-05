@@ -25,7 +25,7 @@ type Note struct {
 	Content      string    `json:"content,omitempty"` // content of note
 	Tags         []string  `json:"tags,omitempty"`    // tags of note
 	Version      int32     `json:"version"`           // number of times the note was updated
-	AuthorID     int64     `json:"id"`                // author id for the note
+	AuthorID     int64     `json:"author_id"`         // author id for the note
 }
 
 func ValidateNote(v *validator.Validator, note *Note) {
