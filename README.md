@@ -1,6 +1,6 @@
 # Notes - Backend API
 
-A backend API for a notes app. A future frontend for the application will be located [here](https://github.com/KevuTheDev/notes-frontend).
+A backend API for a notes app. A future frontend for the application will be located [here](https://github.com/kevinweiyenhe/notes-frontend).
 
 ---
 ## Summary
